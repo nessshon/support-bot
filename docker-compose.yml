@@ -1,0 +1,31 @@
+version: "3"
+
+services:
+
+  bot:
+    build:
+      context: .
+    container_name: support-bot
+    command: sh -c "cd /usr/src/app && python -m app"
+    restart: always
+    depends_on:
+      - redis
+    volumes:
+      - .:/usr/src/app
+    networks:
+      - network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  redis:
+    image: redis:alpine
+    container_name: support-redis
+    restart: always
+    volumes:
+      - ./redis/data/:/data
+    networks:
+      - network
+
+
+networks:
+  network:
