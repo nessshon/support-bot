@@ -12,7 +12,16 @@ class Text(metaclass=ABCMeta):
 
         :param language_code: The language code (e.g., "ru" or "en").
         """
-        self.language_code = language_code if language_code == "ru" else "en"
+        self.language_code = self._validate_language_code(language_code)
+
+    def _validate_language_code(self, code: str) -> str:
+        language_mapping = {
+            "ru": "ru",
+            "en": "en",
+            # Add other languages and their corresponding codes as needed.
+        }
+
+        return language_mapping.get(code, "en")
 
     @property
     @abstractmethod
