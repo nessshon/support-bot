@@ -11,7 +11,17 @@ are intelligently categorized, promoting organized and streamlined discussion in
 as blocking unwanted users, silent mode in topics for discreet conversations, and more. Improve group communication with
 Support Bot!
 
-* Bot example: [@NessSupportBot](https://t.me/NessSupportBot)
+* Bot example: [@nessshonSupportBot](https://t.me/nessshonSupportBot)
+* Linked group example: [@nessshonSupportGroup](https://t.me/nessshonSupportGroup)
+
+**About Limits**:
+<blockquote>
+Specific limits are not specified in the documentation, but the community has shared some rough numbers. 
+<br>
+• Limit on topic creation per minute <b>~20</b>.
+<br>
+• Limit on the total number of topics <b>~1M</b>.
+</blockquote>
 
 <details>
 <summary><b>Available bot commands in the group topics</b></summary>
