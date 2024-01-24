@@ -52,6 +52,7 @@ Specific limits are not specified in the documentation, but the community has sh
    as `BOT_GROUP_ID` later).
 5. Optionally, customize the bot texts to fit your needs in the file
    named [texts](https://github.com/nessshon/support-bot/blob/483d39e2aeed374a0a1c1e80c5c963ba91802151/app/bot/utils/texts.py#L49).
+6. Optionally, add the language you need to SUPPORTED_LANGUAGES and add the appropriate codes to the data.
 
 </details>
 
