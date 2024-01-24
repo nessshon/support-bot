@@ -1,5 +1,11 @@
 from abc import abstractmethod, ABCMeta
 
+# Add other languages and their corresponding codes as needed.
+SUPPORTED_LANGUAGES = {
+    "ru": "🇷🇺 Русский",
+    "en": "🇬🇧 English",
+}
+
 
 class Text(metaclass=ABCMeta):
     """
