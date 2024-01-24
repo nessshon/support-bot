@@ -23,6 +23,7 @@ async def create_forum_topic(bot: Bot, config: Config, name: str) -> int:
             chat_id=config.bot.GROUP_ID,
             name=name,
             icon_custom_emoji_id=ICON_CUSTOM_EMOJI_ID,
+            request_timeout=30,
         )
         return forum_topic.message_thread_id
 
