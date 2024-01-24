@@ -1,5 +1,8 @@
+import asyncio
+import logging
+
 from aiogram import Bot
-from aiogram.exceptions import TelegramBadRequest
+from aiogram.exceptions import TelegramBadRequest, TelegramRetryAfter
 
 from app.config import Config, ICON_CUSTOM_EMOJI_ID
 from .exceptions import CreateForumTopicException, NotEnoughRightsException, NotAForumException
@@ -26,6 +29,12 @@ async def create_forum_topic(bot: Bot, config: Config, name: str) -> int:
             request_timeout=30,
         )
         return forum_topic.message_thread_id
+
+    except TelegramRetryAfter as ex:
+        # Handle Retry-After exception (rate limiting)
+        logging.warning(ex.message)
+        await asyncio.sleep(ex.retry_after)
+        return await create_forum_topic(bot, config, name)
 
     except TelegramBadRequest as ex:
         if "not enough rights" in ex.message:
