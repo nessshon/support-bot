@@ -62,7 +62,7 @@ async def handle_incoming_message(
         If no album is provided, the message is copied. Otherwise, the album is copied.
         """
         if not album:
-            await message.copy_to(
+            await message.forward(
                 chat_id=manager.config.bot.GROUP_ID,
                 message_thread_id=user_data.message_thread_id,
             )
