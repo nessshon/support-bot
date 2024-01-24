@@ -1,9 +1,12 @@
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.utils.markdown import hbold
 
 from app.bot.manager import Manager
 
 from aiogram.types import InlineKeyboardMarkup as Markup
 from aiogram.types import InlineKeyboardButton as Button
+
+from app.bot.utils.texts import SUPPORTED_LANGUAGES
 
 
 def select_language_markup() -> Markup:
@@ -12,11 +15,14 @@ def select_language_markup() -> Markup:
 
     :return: InlineKeyboardMarkup
     """
-    inline_keyboard = [
-        [Button(text="🇷🇺 Русский", callback_data="ru"),
-         Button(text="🇬🇧 English", callback_data="en")],
-    ]
-    return Markup(inline_keyboard=inline_keyboard)
+
+    builder = InlineKeyboardBuilder().row(
+        *[
+            Button(text=text, callback_data=callback_data)
+            for callback_data, text in SUPPORTED_LANGUAGES.items()
+        ], width=2
+    )
+    return builder.as_markup()
 
 
 class Window:

@@ -6,16 +6,13 @@ class Text(metaclass=ABCMeta):
     Abstract base class for handling text data in different languages.
     """
 
-    # Add other languages and their corresponding codes as needed.
-    SUPPORTED_LANGUAGES = ["en", "ru"]
-
     def __init__(self, language_code: str) -> None:
         """
         Initializes the Text instance with the specified language code.
 
         :param language_code: The language code (e.g., "ru" or "en").
         """
-        self.language_code = "en" if language_code not in self.SUPPORTED_LANGUAGES else language_code
+        self.language_code = language_code if language_code in SUPPORTED_LANGUAGES.keys() else "en"
 
     @property
     @abstractmethod
