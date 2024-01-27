@@ -5,7 +5,8 @@ from aiogram.utils.markdown import hlink
 
 from app.bot.manager import Manager
 from app.bot.utils import create_forum_topic
-from app.bot.utils.redis import RedisStorage, UserData
+from app.bot.utils.redis import RedisStorage
+from app.bot.utils.redis.models import UserData
 
 router = Router()
 router.my_chat_member.filter(F.chat.type == "private")

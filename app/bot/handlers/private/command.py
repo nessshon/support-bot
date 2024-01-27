@@ -4,7 +4,7 @@ from aiogram.types import Message
 
 from app.bot.handlers.private.windows import Window
 from app.bot.manager import Manager
-from app.bot.utils.redis import UserData
+from app.bot.utils.redis.models import UserData
 
 router = Router()
 router.message.filter(F.chat.type == "private")

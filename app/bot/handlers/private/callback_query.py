@@ -3,7 +3,8 @@ from aiogram.types import CallbackQuery
 
 from app.bot.handlers.private.windows import Window
 from app.bot.manager import Manager
-from app.bot.utils.redis import RedisStorage, UserData
+from app.bot.utils.redis import RedisStorage
+from app.bot.utils.redis.models import UserData
 from app.bot.utils.texts import SUPPORTED_LANGUAGES
 
 router = Router()

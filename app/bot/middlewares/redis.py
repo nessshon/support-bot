@@ -7,7 +7,9 @@ from aiogram.types import TelegramObject, User, Chat
 from redis.asyncio import Redis
 
 from app.bot.utils.create_forum_topic import create_forum_topic
-from app.bot.utils.redis import RedisStorage, UserData
+from app.bot.utils.redis import RedisStorage
+from app.bot.utils.redis.models import UserData
+
 from app.config import Config
 
 

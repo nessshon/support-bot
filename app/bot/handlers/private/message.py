@@ -7,7 +7,8 @@ from aiogram.types import Message
 from app.bot.manager import Manager
 from app.bot.types.album import Album
 from app.bot.utils import create_forum_topic
-from app.bot.utils.redis import UserData, RedisStorage
+from app.bot.utils.redis import RedisStorage
+from app.bot.utils.redis.models import UserData
 
 router = Router()
 router.message.filter(F.chat.type == "private")
