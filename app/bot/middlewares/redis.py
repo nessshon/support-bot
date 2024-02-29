@@ -9,6 +9,7 @@ from redis.asyncio import Redis
 from app.bot.utils.create_forum_topic import create_forum_topic
 from app.bot.utils.redis import RedisStorage
 from app.bot.utils.redis.models import UserData
+from app.bot.utils.texts import SUPPORTED_LANGUAGES
 
 from app.config import Config
 
@@ -83,6 +84,10 @@ class RedisMiddleware(BaseMiddleware):
                 user_data = user_redis
                 user_data.full_name = user.full_name
                 user_data.username = f"@{user.username}" if user.username else "-"
+
+            if len(SUPPORTED_LANGUAGES.keys()) == 1:
+                # If only one language is supported, set user language_code to the first language
+                user_data.language_code = list(SUPPORTED_LANGUAGES.keys())[0]
 
             # Update user data in Redis
             await redis.update_user(user.id, user_data)

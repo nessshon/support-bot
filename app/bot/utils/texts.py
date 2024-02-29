@@ -1,6 +1,7 @@
 from abc import abstractmethod, ABCMeta
 
 # Add other languages and their corresponding codes as needed.
+# You can also keep only one language by removing the line with the unwanted language.
 SUPPORTED_LANGUAGES = {
     "ru": "🇷🇺 Русский",
     "en": "🇬🇧 English",
