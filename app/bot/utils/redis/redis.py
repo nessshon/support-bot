@@ -95,3 +95,13 @@ class RedisStorage:
         json_data = json.dumps(data.to_dict())
         await self._set(self.NAME, id_, json_data)
         await self._update_index(data.message_thread_id, id_)
+
+    async def get_all_users_ids(self) -> list[int]:
+        """
+        Retrieves all user IDs stored in the Redis hash.
+
+        :return: A list of all user IDs.
+        """
+        async with self.redis.client() as client:
+            user_ids = await client.hkeys(self.NAME)
+            return [int(user_id) for user_id in user_ids]
