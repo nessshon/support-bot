@@ -24,6 +24,16 @@ Specific limits are not specified in the documentation, but the community has sh
 </blockquote>
 
 <details>
+<summary><b>Available bot commands for admins (DEV_ID)</b></summary>
+
+* `/newsletter` - Open the newsletter menu.
+
+  Use this command to initiate a newsletter for users.
+  **Note**: This command works only in private chats.
+
+</details>
+
+<details>
 <summary><b>Available bot commands in the group topics</b></summary>
 
 * `/ban` - Block/Unblock User.
