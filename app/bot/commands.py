@@ -1,14 +1,22 @@
 from aiogram import Bot
-from aiogram.types import BotCommandScopeAllPrivateChats, BotCommand, BotCommandScopeAllGroupChats
+from aiogram.exceptions import TelegramBadRequest
+from aiogram.types import (
+    BotCommand,
+    BotCommandScopeChat,
+    BotCommandScopeAllGroupChats,
+    BotCommandScopeAllPrivateChats,
+)
 
 from app.bot.utils.texts import SUPPORTED_LANGUAGES
+from app.config import Config
 
 
-async def setup(bot: Bot) -> None:
+async def setup(bot: Bot, config: Config) -> None:
     """
     Set up bot commands for various scopes and languages.
 
     :param bot: The Bot object.
+    :param config: The Config object.
     """
     # Define bot commands for different languages
     commands = {
@@ -44,6 +52,30 @@ async def setup(bot: Bot) -> None:
         ]
     }
 
+    admin_commands = {
+        "en":
+            commands["en"].copy() +
+            [BotCommand(command="newsletter", description="Newsletter menu")],
+        "ru":
+            commands["ru"].copy() +
+            [BotCommand(command="newsletter", description="Меню рассылки")],
+    }
+
+    try:
+        # Set commands for dev or admin in English language
+        await bot.set_my_commands(
+            commands=admin_commands["en"],
+            scope=BotCommandScopeChat(chat_id=config.bot.DEV_ID),
+        )
+        # Set commands for dev or admin in Russian language
+        await bot.set_my_commands(
+            commands=admin_commands["ru"],
+            scope=BotCommandScopeChat(chat_id=config.bot.DEV_ID),
+            language_code="ru",
+        )
+    except TelegramBadRequest:
+        raise ValueError(f"Chat with DEV_ID {config.bot.DEV_ID} not found.")
+
     # Set commands for all private chats in English language
     await bot.set_my_commands(
         commands=commands["en"],
@@ -68,12 +100,26 @@ async def setup(bot: Bot) -> None:
     )
 
 
-async def delete(bot: Bot) -> None:
+async def delete(bot: Bot, config: Config) -> None:
     """
     Delete bot commands for various scopes and languages.
 
+    :param config: The Config object.
     :param bot: The Bot object.
     """
+
+    try:
+        # Delete commands for dev or admin in any language
+        await bot.delete_my_commands(
+            scope=BotCommandScopeChat(chat_id=config.bot.DEV_ID),
+        )
+        # Delete commands for dev or admin in Russian language
+        await bot.delete_my_commands(
+            scope=BotCommandScopeChat(chat_id=config.bot.DEV_ID),
+            language_code="ru",
+        )
+    except TelegramBadRequest:
+        raise ValueError(f"Chat with DEV_ID {config.bot.DEV_ID} not found.")
 
     # Delete commands for all private chats in any language
     await bot.delete_my_commands(

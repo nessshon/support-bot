@@ -1,9 +1,11 @@
 from aiogram import Router, F
-from aiogram.filters import Command
+from aiogram.filters import Command, MagicData
 from aiogram.types import Message
+from aiogram_newsletter.manager import ANManager
 
 from app.bot.handlers.private.windows import Window
 from app.bot.manager import Manager
+from app.bot.utils.redis import RedisStorage
 from app.bot.utils.redis.models import UserData
 
 router = Router()
@@ -61,4 +63,28 @@ async def handler(message: Message, manager: Manager) -> None:
     """
     text = manager.text_message.get("source")
     await manager.send_message(text)
+    await manager.delete_message(message)
+
+
+@router.message(
+    Command("newsletter"),
+    MagicData(F.event_from_user.id == F.config.bot.DEV_ID),  # type: ignore
+)
+async def handler(
+        message: Message,
+        manager: Manager,
+        an_manager: ANManager,
+        redis: RedisStorage,
+) -> None:
+    """
+    Handles the /newsletter command.
+
+    :param message: Message object.
+    :param manager: Manager object.
+    :param redis: RedisStorage object.
+    :param an_manager: Manager object from aiogram_newsletter.
+    :return: None
+    """
+    users_ids = await redis.get_all_users_ids()
+    await an_manager.newsletter_menu(users_ids, Window.main_menu)
     await manager.delete_message(message)

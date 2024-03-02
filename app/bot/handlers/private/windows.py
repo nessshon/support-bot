@@ -44,7 +44,7 @@ class Window:
         await manager.send_message(text, reply_markup=reply_markup)
 
     @staticmethod
-    async def main_menu(manager: Manager) -> None:
+    async def main_menu(manager: Manager, **_) -> None:
         """
         Display the main menu window.
 
@@ -55,6 +55,7 @@ class Window:
         with suppress(IndexError, KeyError):
             text = text.format(full_name=hbold(manager.user.full_name))
         await manager.send_message(text)
+        await manager.state.set_state(None)
 
     @staticmethod
     async def change_language(manager: Manager) -> None:

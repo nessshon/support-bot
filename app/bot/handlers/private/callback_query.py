@@ -1,4 +1,5 @@
 from aiogram import Router, F
+from aiogram.filters import StateFilter
 from aiogram.types import CallbackQuery
 
 from app.bot.handlers.private.windows import Window
@@ -8,7 +9,7 @@ from app.bot.utils.redis.models import UserData
 from app.bot.utils.texts import SUPPORTED_LANGUAGES
 
 router = Router()
-router.callback_query.filter(F.message.chat.type == "private")
+router.callback_query.filter(F.message.chat.type == "private", StateFilter(None))
 
 
 @router.callback_query()

@@ -1,4 +1,5 @@
 from aiogram import Dispatcher
+from aiogram_newsletter.handlers import AiogramNewsletterHandlers
 
 from . import errors
 from . import group
@@ -19,6 +20,7 @@ def include_routers(dp: Dispatcher) -> None:
             errors.router,
         ]
     )
+    AiogramNewsletterHandlers().register(dp)
 
 
 __all__ = [

@@ -2,6 +2,7 @@ import asyncio
 
 from aiogram import Router, F
 from aiogram.exceptions import TelegramBadRequest
+from aiogram.filters import StateFilter
 from aiogram.types import Message
 
 from app.bot.manager import Manager
@@ -11,7 +12,7 @@ from app.bot.utils.redis import RedisStorage
 from app.bot.utils.redis.models import UserData
 
 router = Router()
-router.message.filter(F.chat.type == "private")
+router.message.filter(F.chat.type == "private", StateFilter(None))
 
 
 @router.edited_message()

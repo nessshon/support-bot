@@ -1,4 +1,5 @@
 from aiogram import Dispatcher
+from aiogram_newsletter.middleware import AiogramNewsletterMiddleware
 
 from .album import AlbumMiddleware
 from .manager import ManagerMiddleware
@@ -26,6 +27,9 @@ def register_middlewares(dp: Dispatcher, **kwargs) -> None:
     dp.message.middleware.register(AlbumMiddleware())
     # Register ThrottlingMiddleware for message processing
     dp.message.middleware.register(ThrottlingMiddleware())
+
+    # Register AiogramNewsletterMiddleware for newsletter processing
+    dp.update.middleware.register(AiogramNewsletterMiddleware(kwargs["apscheduler"]))
 
 
 __all__ = [
