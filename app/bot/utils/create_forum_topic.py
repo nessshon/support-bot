@@ -4,7 +4,7 @@ import logging
 from aiogram import Bot
 from aiogram.exceptions import TelegramBadRequest, TelegramRetryAfter
 
-from app.config import Config, ICON_CUSTOM_EMOJI_ID
+from app.config import Config
 from .exceptions import CreateForumTopicException, NotEnoughRightsException, NotAForumException
 
 
@@ -25,7 +25,7 @@ async def create_forum_topic(bot: Bot, config: Config, name: str) -> int:
         forum_topic = await bot.create_forum_topic(
             chat_id=config.bot.GROUP_ID,
             name=name,
-            icon_custom_emoji_id=ICON_CUSTOM_EMOJI_ID,
+            icon_custom_emoji_id=config.bot.BOT_EMOJI_ID,
             request_timeout=30,
         )
         return forum_topic.message_thread_id

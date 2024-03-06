@@ -2,8 +2,6 @@ from dataclasses import dataclass
 
 from environs import Env
 
-ICON_CUSTOM_EMOJI_ID = "5417915203100613993"
-
 
 @dataclass
 class BotConfig:
@@ -14,10 +12,12 @@ class BotConfig:
     - TOKEN (str): The bot token.
     - DEV_ID (int): The developer's user ID.
     - GROUP_ID (int): The group chat ID.
+    - BOT_EMOJI_ID (str): The custom emoji ID for the group's topic.
     """
     TOKEN: str
     DEV_ID: int
     GROUP_ID: int
+    BOT_EMOJI_ID: str
 
 
 @dataclass
@@ -70,6 +70,7 @@ def load_config() -> Config:
             TOKEN=env.str("BOT_TOKEN"),
             DEV_ID=env.int("BOT_DEV_ID"),
             GROUP_ID=env.int("BOT_GROUP_ID"),
+            BOT_EMOJI_ID=env.str("BOT_EMOJI_ID"),
         ),
         redis=RedisConfig(
             HOST=env.str("REDIS_HOST"),
