@@ -102,11 +102,11 @@ async def create_forum_topic_and_set_message_thread_id(
             bot, config, user.full_name,
         )
         # Wait for 1 seconds for the topic to be created
-        await asyncio.sleep(1)
+        await asyncio.sleep(2)
     except Exception as e:
         await bot.send_message(config.bot.DEV_ID, str(e))
         logging.exception(e)
         return None
 
-    user_data.message_thread_id = message_thread_id,
+    user_data.message_thread_id = message_thread_id
     await redis.update_user(user.id, user_data)
