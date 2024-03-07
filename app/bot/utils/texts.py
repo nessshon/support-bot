@@ -80,6 +80,7 @@ class TextMessage(Text):
                     "User information"
                     "<blockquote>Receive a message with basic information about the user.</blockquote>"
                 ),
+                "user_restarted_bot": "<b>User {name} restarted the bot!</b>",
                 "user_stopped_bot": "<b>User {name} stopped the bot!</b>",
                 "user_blocked": "<b>User blocked!</b> Messages from the user are not accepted.",
                 "user_unblocked": "<b>User unblocked!</b> Messages from the user are being accepted again.",
@@ -133,6 +134,7 @@ class TextMessage(Text):
                     "Информация о пользователе"
                     "<blockquote>Получить сообщение с основной информацией о пользователе.</blockquote>"
                 ),
+                "user_restarted_bot": "<b>Пользователь {name} перезапустил(а) бота!</b>",
                 "user_stopped_bot": "<b>Пользователь {name} остановил(а) бота!</b>",
                 "user_blocked": "<b>Пользователь заблокирован!</b> Сообщения от пользователя не принимаются.",
                 "user_unblocked": "<b>Пользователь разблокирован!</b> Сообщения от пользователя вновь принимаются.",
