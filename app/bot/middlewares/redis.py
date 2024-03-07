@@ -63,8 +63,8 @@ class RedisMiddleware(BaseMiddleware):
                     message_thread_id = await create_forum_topic(
                         event.bot, config, user.full_name,
                     )
-                    # Wait for 2 seconds for the topic to be created
-                    await asyncio.sleep(2)
+                    # Wait for 1 seconds for the topic to be created
+                    await asyncio.sleep(1)
                 except Exception as e:
                     await event.bot.send_message(config.bot.DEV_ID, str(e))
                     logging.exception(e)
