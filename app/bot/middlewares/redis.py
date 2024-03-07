@@ -2,7 +2,7 @@ import asyncio
 import logging
 from typing import Callable, Dict, Any, Awaitable
 
-from aiogram import BaseMiddleware
+from aiogram import BaseMiddleware, Bot
 from aiogram.types import TelegramObject, User, Chat
 from redis.asyncio import Redis
 
@@ -57,31 +57,21 @@ class RedisMiddleware(BaseMiddleware):
         if chat.type == "private" and user is not None:
             # Retrieve user data from Redis based on user ID
             user_redis = await redis.get_user(user.id)
-            if user_redis is None:
-                try:
-                    # If user data is not found, create a forum topic and initialize user data
-                    message_thread_id = await create_forum_topic(
-                        event.bot, config, user.full_name,
-                    )
-                    # Wait for 1 seconds for the topic to be created
-                    await asyncio.sleep(1)
-                except Exception as e:
-                    await event.bot.send_message(config.bot.DEV_ID, str(e))
-                    logging.exception(e)
-                    return None
+            user_data = user_redis or UserData(
+                message_thread_id=None,
+                message_silent_id=None,
+                message_silent_mode=False,
+                is_banned=False,
+                id=user.id,
+                full_name=user.full_name,
+                username=f"@{user.username}" if user.username else "-",
+            )
 
-                user_data = UserData(
-                    message_thread_id=message_thread_id,
-                    message_silent_id=None,
-                    message_silent_mode=False,
-                    is_banned=False,
-                    id=user.id,
-                    full_name=user.full_name,
-                    username=f"@{user.username}" if user.username else "-",
-                )
+            if user_redis is None:
+                _ = asyncio.create_task(create_forum_topic_and_set_message_thread_id(
+                    event.bot, user, redis, config, user_data,
+                ))
             else:
-                # If user data is found, update full_name and username fields
-                user_data = user_redis
                 user_data.full_name = user.full_name
                 user_data.username = f"@{user.username}" if user.username else "-"
 
@@ -101,3 +91,22 @@ class RedisMiddleware(BaseMiddleware):
 
         # Call the handler function with the event and data
         return await handler(event, data)
+
+
+async def create_forum_topic_and_set_message_thread_id(
+        bot: Bot, user: User, redis: RedisStorage, config: Config, user_data: UserData,
+):
+    try:
+        # If user data is not found, create a forum topic and initialize user data
+        message_thread_id = await create_forum_topic(
+            bot, config, user.full_name,
+        )
+        # Wait for 1 seconds for the topic to be created
+        await asyncio.sleep(1)
+    except Exception as e:
+        await bot.send_message(config.bot.DEV_ID, str(e))
+        logging.exception(e)
+        return None
+
+    user_data.message_thread_id = message_thread_id,
+    await redis.update_user(user.id, user_data)

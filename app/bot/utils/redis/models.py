@@ -5,7 +5,7 @@ from datetime import datetime, timezone, timedelta
 @dataclass
 class UserData:
     """Data class representing user information."""
-    message_thread_id: int
+    message_thread_id: int | None
     message_silent_id: int | None
     message_silent_mode: bool
 

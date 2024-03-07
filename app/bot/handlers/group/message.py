@@ -26,7 +26,7 @@ async def handler(message: Message, manager: Manager, redis: RedisStorage) -> No
     if not user_data: return None  # noqa
 
     # Generate a URL for the user's profile
-    url = f"https://t.me/{user_data.username[1:]}" if user_data.username else f"tg://user?id={user_data.id}"
+    url = f"https://t.me/{user_data.username[1:]}" if user_data.username != "-" else f"tg://user?id={user_data.id}"
 
     # Get the appropriate text based on the user's state
     text = manager.text_message.get("user_started_bot" if user_data.state == "member" else "user_stopped_bot")
