@@ -5,6 +5,7 @@ from aiogram import Router, F
 from aiogram.exceptions import TelegramAPIError
 from aiogram.filters import MagicData
 from aiogram.types import Message
+from aiogram.utils.markdown import hlink
 
 from app.bot.manager import Manager
 from app.bot.types.album import Album
@@ -16,6 +17,25 @@ router.message.filter(
     F.chat.type.in_(["group", "supergroup"]),
     F.message_thread_id.is_not(None),
 )
+
+
+@router.message(F.forum_topic_created)
+async def handler(message: Message, manager: Manager, redis: RedisStorage) -> None:
+    await asyncio.sleep(2)
+    user_data = await redis.get_by_message_thread_id(message.message_thread_id)
+    if not user_data: return None  # noqa
+
+    # Generate a URL for the user's profile
+    url = f"https://t.me/{user_data.username[1:]}" if user_data.username else f"tg://user?id={user_data.id}"
+
+    # Get the appropriate text based on the user's state
+    text = manager.text_message.get("user_started_bot" if user_data.state == "member" else "user_stopped_bot")
+
+    await message.answer(
+        chat_id=manager.config.bot.GROUP_ID,
+        text=text.format(name=hlink(user_data.full_name, url)),
+        message_thread_id=user_data.message_thread_id,
+    )
 
 
 @router.message(F.pinned_message | F.forum_topic_edited | F.forum_topic_closed | F.forum_topic_reopened)
