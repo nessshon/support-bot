@@ -31,11 +31,7 @@ async def handler(message: Message, manager: Manager, redis: RedisStorage) -> No
     # Get the appropriate text based on the user's state
     text = manager.text_message.get("user_started_bot" if user_data.state == "member" else "user_stopped_bot")
 
-    await message.answer(
-        chat_id=manager.config.bot.GROUP_ID,
-        text=text.format(name=hlink(user_data.full_name, url)),
-        message_thread_id=user_data.message_thread_id,
-    )
+    await message.answer(text=text.format(name=hlink(user_data.full_name, url)))
 
 
 @router.message(F.pinned_message | F.forum_topic_edited | F.forum_topic_closed | F.forum_topic_reopened)
