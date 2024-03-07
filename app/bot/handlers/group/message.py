@@ -29,13 +29,16 @@ async def handler(message: Message, manager: Manager, redis: RedisStorage) -> No
     url = f"https://t.me/{user_data.username[1:]}" if user_data.username != "-" else f"tg://user?id={user_data.id}"
 
     # Get the appropriate text based on the user's state
-    text = manager.text_message.get("user_started_bot" if user_data.state == "member" else "user_stopped_bot")
+    text = manager.text_message.get("user_started_bot")
 
-    await message.bot.send_message(
+    message = await message.bot.send_message(
         chat_id=manager.config.bot.GROUP_ID,
         text=text.format(name=hlink(user_data.full_name, url)),
         message_thread_id=user_data.message_thread_id
     )
+
+    # Pin the message
+    await message.pin()
 
 
 @router.message(F.pinned_message | F.forum_topic_edited | F.forum_topic_closed | F.forum_topic_reopened)
