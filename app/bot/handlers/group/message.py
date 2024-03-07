@@ -21,7 +21,7 @@ router.message.filter(
 
 @router.message(F.forum_topic_created)
 async def handler(message: Message, manager: Manager, redis: RedisStorage) -> None:
-    await asyncio.sleep(2)
+    await asyncio.sleep(3)
     user_data = await redis.get_by_message_thread_id(message.message_thread_id)
     if not user_data: return None  # noqa
 
@@ -31,7 +31,11 @@ async def handler(message: Message, manager: Manager, redis: RedisStorage) -> No
     # Get the appropriate text based on the user's state
     text = manager.text_message.get("user_started_bot" if user_data.state == "member" else "user_stopped_bot")
 
-    await message.answer(text=text.format(name=hlink(user_data.full_name, url)))
+    await message.bot.send_message(
+        chat_id=manager.config.bot.GROUP_ID,
+        text=text.format(name=hlink(user_data.full_name, url)),
+        message_thread_id=user_data.message_thread_id
+    )
 
 
 @router.message(F.pinned_message | F.forum_topic_edited | F.forum_topic_closed | F.forum_topic_reopened)
