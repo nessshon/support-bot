@@ -6,6 +6,30 @@ from aiogram.exceptions import TelegramBadRequest, TelegramRetryAfter
 
 from app.config import Config
 from .exceptions import CreateForumTopicException, NotEnoughRightsException, NotAForumException
+from .redis import RedisStorage
+from .redis.models import UserData
+
+
+async def get_or_create_forum_topic(
+        bot: Bot,
+        redis: RedisStorage,
+        config: Config,
+        user_data: UserData,
+) -> int:
+    if user_data.message_thread_id is None:
+        try:
+            # If message_thread_id is not found, create a forum topic
+            message_thread_id = await create_forum_topic(
+                bot, config, user_data.full_name,
+            )
+            user_data.message_thread_id = message_thread_id
+            await redis.update_user(user_data.id, user_data)
+
+        except Exception as e:
+            await bot.send_message(config.bot.DEV_ID, str(e))
+            logging.exception(e)
+
+    return user_data.message_thread_id
 
 
 async def create_forum_topic(bot: Bot, config: Config, name: str) -> int:

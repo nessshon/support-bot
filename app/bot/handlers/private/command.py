@@ -5,6 +5,7 @@ from aiogram_newsletter.manager import ANManager
 
 from app.bot.handlers.private.windows import Window
 from app.bot.manager import Manager
+from app.bot.utils.create_forum_topic import get_or_create_forum_topic
 from app.bot.utils.redis import RedisStorage
 from app.bot.utils.redis.models import UserData
 
@@ -13,7 +14,12 @@ router.message.filter(F.chat.type == "private")
 
 
 @router.message(Command("start"))
-async def handler(message: Message, manager: Manager, user_data: UserData) -> None:
+async def handler(
+        message: Message,
+        manager: Manager,
+        redis: RedisStorage,
+        user_data: UserData,
+) -> None:
     """
     Handles the /start command.
 
@@ -22,6 +28,7 @@ async def handler(message: Message, manager: Manager, user_data: UserData) -> No
 
     :param message: Message object.
     :param manager: Manager object.
+    :param redis: RedisStorage object.
     :param user_data: UserData object.
     :return: None
     """
@@ -30,6 +37,9 @@ async def handler(message: Message, manager: Manager, user_data: UserData) -> No
     else:
         await Window.select_language(manager)
     await manager.delete_message(message)
+
+    # Create the forum topic
+    await get_or_create_forum_topic(message.bot, redis, manager.config, user_data)
 
 
 @router.message(Command("language"))

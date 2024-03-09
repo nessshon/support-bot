@@ -7,7 +7,10 @@ from aiogram.types import Message
 
 from app.bot.manager import Manager
 from app.bot.types.album import Album
-from app.bot.utils import create_forum_topic
+from app.bot.utils.create_forum_topic import (
+    create_forum_topic,
+    get_or_create_forum_topic,
+)
 from app.bot.utils.redis import RedisStorage
 from app.bot.utils.redis.models import UserData
 
@@ -63,15 +66,19 @@ async def handle_incoming_message(
         Copies the message or album to the forum topic.
         If no album is provided, the message is copied. Otherwise, the album is copied.
         """
+        message_thread_id = await get_or_create_forum_topic(
+            message.bot, redis, manager.config, user_data,
+        )
+
         if not album:
             await message.copy_to(
                 chat_id=manager.config.bot.GROUP_ID,
-                message_thread_id=user_data.message_thread_id,
+                message_thread_id=message_thread_id,
             )
         else:
             await album.copy_to(
                 chat_id=manager.config.bot.GROUP_ID,
-                message_thread_id=user_data.message_thread_id,
+                message_thread_id=message_thread_id,
             )
 
     try:
@@ -80,14 +87,12 @@ async def handle_incoming_message(
         if "message thread not found" in ex.message:
             # If the message thread is not found, create a new forum topic
             user_data.message_thread_id = await create_forum_topic(
-                manager.bot, manager.config, user_data.full_name,
+                message.bot, manager.config, user_data.full_name,
             )
             await copy_message_to_topic()
         else:
             raise
 
-    # Update user data in Redis
-    await redis.update_user(user_data.id, user_data)
     # Send a confirmation message to the user
     text = manager.text_message.get("message_sent")
     # Reply to the edited message with the specified text

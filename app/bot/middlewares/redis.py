@@ -1,17 +1,12 @@
-import asyncio
-import logging
 from typing import Callable, Dict, Any, Awaitable
 
-from aiogram import BaseMiddleware, Bot
+from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject, User, Chat
 from redis.asyncio import Redis
 
-from app.bot.utils.create_forum_topic import create_forum_topic
 from app.bot.utils.redis import RedisStorage
 from app.bot.utils.redis.models import UserData
 from app.bot.utils.texts import SUPPORTED_LANGUAGES
-
-from app.config import Config
 
 
 class RedisMiddleware(BaseMiddleware):
@@ -46,8 +41,6 @@ class RedisMiddleware(BaseMiddleware):
         """
         # Create an instance of RedisStorage using the provided Redis instance
         redis = RedisStorage(self.redis)
-        # Retrieve the bot configuration from data
-        config: Config = data.get("config")
 
         # Extract the chat and user objects from data
         chat: Chat = data.get("event_chat")
@@ -66,12 +59,7 @@ class RedisMiddleware(BaseMiddleware):
                 full_name=user.full_name,
                 username=f"@{user.username}" if user.username else "-",
             )
-
-            if user_redis is None:
-                _ = asyncio.create_task(create_forum_topic_and_set_message_thread_id(
-                    event.bot, user, redis, config, user_data,
-                ))
-            else:
+            if user_redis:
                 user_data.full_name = user.full_name
                 user_data.username = f"@{user.username}" if user.username else "-"
 
@@ -91,22 +79,3 @@ class RedisMiddleware(BaseMiddleware):
 
         # Call the handler function with the event and data
         return await handler(event, data)
-
-
-async def create_forum_topic_and_set_message_thread_id(
-        bot: Bot, user: User, redis: RedisStorage, config: Config, user_data: UserData,
-):
-    try:
-        # If user data is not found, create a forum topic and initialize user data
-        message_thread_id = await create_forum_topic(
-            bot, config, user.full_name,
-        )
-        # Wait for 1 seconds for the topic to be created
-        await asyncio.sleep(2)
-    except Exception as e:
-        await bot.send_message(config.bot.DEV_ID, str(e))
-        logging.exception(e)
-        return None
-
-    user_data.message_thread_id = message_thread_id
-    await redis.update_user(user.id, user_data)
