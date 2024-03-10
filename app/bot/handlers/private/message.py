@@ -71,7 +71,7 @@ async def handle_incoming_message(
         )
 
         if not album:
-            await message.copy_to(
+            await message.forward(
                 chat_id=manager.config.bot.GROUP_ID,
                 message_thread_id=message_thread_id,
             )
