@@ -1,7 +1,8 @@
 import asyncio
 
-from aiogram.enums import ParseMode
 from aiogram import Bot, Dispatcher
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
 from aiogram.fsm.storage.redis import RedisStorage
 from apscheduler.jobstores.redis import RedisJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -14,10 +15,10 @@ from .logger import setup_logger
 
 
 async def on_shutdown(
-        apscheduler: AsyncIOScheduler,
-        dispatcher: Dispatcher,
-        config: Config,
-        bot: Bot,
+    apscheduler: AsyncIOScheduler,
+    dispatcher: Dispatcher,
+    config: Config,
+    bot: Bot,
 ) -> None:
     """
     Shutdown event handler. This runs when the bot shuts down.
@@ -37,9 +38,9 @@ async def on_shutdown(
 
 
 async def on_startup(
-        apscheduler: AsyncIOScheduler,
-        config: Config,
-        bot: Bot,
+    apscheduler: AsyncIOScheduler,
+    config: Config,
+    bot: Bot,
 ) -> None:
     """
     Startup event handler. This runs when the bot starts up.
@@ -68,7 +69,7 @@ async def main() -> None:
         db=config.redis.DB,
     )
     apscheduler = AsyncIOScheduler(
-        jobstores={'default': job_store},
+        jobstores={"default": job_store},
     )
 
     # Initialize Redis storage
@@ -79,7 +80,9 @@ async def main() -> None:
     # Create Bot and Dispatcher instances
     bot = Bot(
         token=config.bot.TOKEN,
-        parse_mode=ParseMode.HTML,
+        default=DefaultBotProperties(
+            parse_mode=ParseMode.HTML,
+        ),
     )
     dp = Dispatcher(
         apscheduler=apscheduler,
@@ -96,7 +99,9 @@ async def main() -> None:
     # Include routes
     include_routers(dp)
     # Register middlewares
-    register_middlewares(dp, config=config, redis=storage.redis, apscheduler=apscheduler)
+    register_middlewares(
+        dp, config=config, redis=storage.redis, apscheduler=apscheduler
+    )
 
     # Start the bot
     await bot.delete_webhook()
