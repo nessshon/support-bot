@@ -1,3 +1,5 @@
+Please be informed that the bot in this repository currently contains bugs. Therefore, it is advisable to use it at your own risk. Unfortunately, there is no definite timeline for when these issues will be addressed.
+
 # 🤖 Support Bot
 
 [![License](https://img.shields.io/github/license/tonmendon/ton-subdomain)](https://github.com/tonmendon/ton-subdomain/blob/main/LICENSE)
