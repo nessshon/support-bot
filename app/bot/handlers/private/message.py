@@ -67,7 +67,10 @@ async def handle_incoming_message(
         If no album is provided, the message is copied. Otherwise, the album is copied.
         """
         message_thread_id = await get_or_create_forum_topic(
-            message.bot, redis, manager.config, user_data,
+            message.bot,
+            redis,
+            manager.config,
+            user_data,
         )
 
         if not album:
@@ -85,10 +88,12 @@ async def handle_incoming_message(
         await copy_message_to_topic()
     except TelegramBadRequest as ex:
         if "message thread not found" in ex.message:
-            # If the message thread is not found, create a new forum topic
             user_data.message_thread_id = await create_forum_topic(
-                message.bot, manager.config, user_data.full_name,
+                message.bot,
+                manager.config,
+                user_data.full_name,
             )
+            await redis.update_user(user_data.id, user_data)
             await copy_message_to_topic()
         else:
             raise
