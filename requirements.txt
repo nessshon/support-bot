@@ -1,4 +1,4 @@
-aiogram==3.5.0
+aiogram==3.7.0
 aiogram-newsletter>=0.0.10
 cachetools==5.3.2
 environs==10.3.0
