@@ -58,7 +58,7 @@ class Album(TelegramObject):
         """
         bot = cast(Bot, self.bot)
         group = [
-            INPUT_TYPES[media_type](media=media.file_id, parse_mode=bot.parse_mode)
+            INPUT_TYPES[media_type](media=media.file_id, parse_mode=bot.default.parse_mode)
             for media_type in self.media_types
             for media in getattr(self, media_type)
         ]
