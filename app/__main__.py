@@ -13,7 +13,6 @@ from .bot.middlewares import register_middlewares
 from .config import load_config, Config
 from .logger import setup_logger
 
-
 async def on_shutdown(
     apscheduler: AsyncIOScheduler,
     dispatcher: Dispatcher,
@@ -21,21 +20,20 @@ async def on_shutdown(
     bot: Bot,
 ) -> None:
     """
-    Shutdown event handler. This runs when the bot shuts down.
+    Обработчик события завершения работы. Выполняется при завершении работы бота.
 
-    :param apscheduler: AsyncIOScheduler: The apscheduler instance.
-    :param dispatcher: Dispatcher: The bot dispatcher.
-    :param config: Config: The config instance.
-    :param bot: Bot: The bot instance.
+    :param apscheduler: AsyncIOScheduler: Экземпляр планировщика задач.
+    :param dispatcher: Dispatcher: Диспетчер бота.
+    :param config: Config: Экземпляр конфигурации.
+    :param bot: Bot: Экземпляр бота.
     """
-    # Stop apscheduler
+    # Остановить планировщик задач
     apscheduler.shutdown()
-    # Delete commands and close storage when shutting down
+    # Удалить команды и закрыть хранилище при завершении работы
     await commands.delete(bot, config)
     await dispatcher.storage.close()
     await bot.delete_webhook()
     await bot.session.close()
-
 
 async def on_startup(
     apscheduler: AsyncIOScheduler,
@@ -43,26 +41,25 @@ async def on_startup(
     bot: Bot,
 ) -> None:
     """
-    Startup event handler. This runs when the bot starts up.
+    Обработчик события запуска. Выполняется при запуске бота.
 
-    :param apscheduler: AsyncIOScheduler: The apscheduler instance.
-    :param config: Config: The config instance.
-    :param bot: Bot: The bot instance.
+    :param apscheduler: AsyncIOScheduler: Экземпляр планировщика задач.
+    :param config: Config: Экземпляр конфигурации.
+    :param bot: Bot: Экземпляр бота.
     """
-    # Start apscheduler
+    # Запустить планировщик задач
     apscheduler.start()
-    # Setup commands when starting up
+    # Настроить команды при запуске
     await commands.setup(bot, config)
-
 
 async def main() -> None:
     """
-    Main function that initializes the bot and starts the event loop.
+    Основная функция, которая инициализирует бота и запускает цикл событий.
     """
-    # Load config
+    # Загрузить конфигурацию
     config = load_config()
 
-    # Initialize apscheduler
+    # Инициализировать планировщик задач
     job_store = RedisJobStore(
         host=config.redis.HOST,
         port=config.redis.PORT,
@@ -72,12 +69,12 @@ async def main() -> None:
         jobstores={"default": job_store},
     )
 
-    # Initialize Redis storage
+    # Инициализировать хранилище Redis
     storage = RedisStorage.from_url(
         url=config.redis.dsn(),
     )
 
-    # Create Bot and Dispatcher instances
+    # Создать экземпляры Bot и Dispatcher
     bot = Bot(
         token=config.bot.TOKEN,
         default=DefaultBotProperties(
@@ -91,25 +88,24 @@ async def main() -> None:
         bot=bot,
     )
 
-    # Register startup handler
+    # Зарегистрировать обработчик запуска
     dp.startup.register(on_startup)
-    # Register shutdown handler
+    # Зарегистрировать обработчик завершения работы
     dp.shutdown.register(on_shutdown)
 
-    # Include routes
+    # Включить маршруты
     include_routers(dp)
-    # Register middlewares
+    # Зарегистрировать промежуточные слои (middlewares)
     register_middlewares(
         dp, config=config, redis=storage.redis, apscheduler=apscheduler
     )
 
-    # Start the bot
+    # Запустить бота
     await bot.delete_webhook()
     await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
 
-
-if __name__ == "__main__":
-    # Set up logging
+if name == "main":
+    # Настроить логирование
     setup_logger()
-    # Run the bot
+    # Запустить бота
     asyncio.run(main())

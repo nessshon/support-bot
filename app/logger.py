@@ -6,39 +6,40 @@ from logging.handlers import TimedRotatingFileHandler
 
 def setup_logger() -> None:
     """
-    Set up the logger configuration for the application.
+    Настроить конфигурацию логгера для приложения.
 
-    This function ensures that the logs directory exists, configures basic logging,
-    and sets the log level for specific loggers.
+    Эта функция обеспечивает существование директории для логов, настраивает базовый логгинг
+    и устанавливает уровень логирования для конкретных логгеров.
 
-    Logs are written to both a timed rotating file handler and a stream handler.
+    Логи записываются как в файл с ротацией по времени, так и в консоль.
 
-    - Logs are saved to files in the ".logs" directory with a one-day rotation.
-    - The console (stream) handler displays logs on the console.
+    - Логи сохраняются в файлы в директории ".logs" с ротацией раз в день.
+    - Консольный (stream) обработчик отображает логи в консоли.
 
-    The log level for the "aiogram.event" and "httpx" loggers is set to CRITICAL.
+    Уровень логирования для логгеров "aiogram.event" и "httpx" установлен на CRITICAL.
 
     :return: None
     """
-    # Ensure the logs directory exists
+    # Обеспечиваем существование директории для логов
     os.makedirs(".logs", exist_ok=True)
 
-    # Set up basic logging configuration
+    # Настраиваем базовую конфигурацию логирования
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',  # noqa
         handlers=[
-            # Add a timed rotating file handler to log to a file
+            # Добавляем обработчик с ротацией по времени для записи логов в файл
             TimedRotatingFileHandler(
                 filename=f".logs/{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log",
                 when="midnight",
                 interval=1,
-                backupCount=7,  # Keep logs for 7 days
+                backupCount=7,  # Храним логи за последние 7 дней
             ),
-            # Add a stream handler to log to the console
+            # Добавляем консольный обработчик для вывода логов в консоль
             logging.StreamHandler(),
         ]
     )
-    # Set the log level for aiogram.event and httpx logger to CRITICAL
+
+    # Устанавливаем уровень логирования для логгеров aiogram.event и httpx на CRITICAL
     aiogram_logger = logging.getLogger("aiogram.event")
     aiogram_logger.setLevel(logging.CRITICAL)

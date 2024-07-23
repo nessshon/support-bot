@@ -1,34 +1,31 @@
 from dataclasses import dataclass
-
 from environs import Env
-
 
 @dataclass
 class BotConfig:
     """
-    Data class representing the configuration for the bot.
+    Класс данных, представляющий конфигурацию для бота.
 
-    Attributes:
-    - TOKEN (str): The bot token.
-    - DEV_ID (int): The developer's user ID.
-    - GROUP_ID (int): The group chat ID.
-    - BOT_EMOJI_ID (str): The custom emoji ID for the group's topic.
+    Атрибуты:
+    - TOKEN (str): Токен бота.
+    - DEV_ID (int): ID пользователя-разработчика.
+    - GROUP_ID (int): ID группового чата.
+    - BOT_EMOJI_ID (str): ID пользовательского эмодзи для темы группы.
     """
     TOKEN: str
     DEV_ID: int
     GROUP_ID: int
     BOT_EMOJI_ID: str
 
-
 @dataclass
 class RedisConfig:
     """
-    Data class representing the configuration for Redis.
+    Класс данных, представляющий конфигурацию для Redis.
 
-    Attributes:
-    - HOST (str): The Redis host.
-    - PORT (int): The Redis port.
-    - DB (int): The Redis database number.
+    Атрибуты:
+    - HOST (str): Хост Redis.
+    - PORT (int): Порт Redis.
+    - DB (int): Номер базы данных Redis.
     """
     HOST: str
     PORT: int
@@ -36,31 +33,29 @@ class RedisConfig:
 
     def dsn(self) -> str:
         """
-        Generates a Redis connection DSN (Data Source Name) using the provided host, port, and database.
+        Генерирует DSN (Data Source Name) для подключения к Redis, используя предоставленные хост, порт и базу данных.
 
-        :return: The generated DSN.
+        :return: Сгенерированный DSN.
         """
         return f"redis://{self.HOST}:{self.PORT}/{self.DB}"
-
 
 @dataclass
 class Config:
     """
-    Data class representing the overall configuration for the application.
+    Класс данных, представляющий общую конфигурацию для приложения.
 
-    Attributes:
-    - bot (BotConfig): The bot configuration.
-    - redis (RedisConfig): The Redis configuration.
+    Атрибуты:
+    - bot (BotConfig): Конфигурация бота.
+    - redis (RedisConfig): Конфигурация Redis.
     """
     bot: BotConfig
     redis: RedisConfig
 
-
 def load_config() -> Config:
     """
-    Load the configuration from environment variables and return a Config object.
+    Загрузить конфигурацию из переменных окружения и вернуть объект Config.
 
-    :return: The Config object with loaded configuration.
+    :return: Объект Config с загруженной конфигурацией.
     """
     env = Env()
     env.read_env()

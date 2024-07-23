@@ -62,7 +62,7 @@ async def handler(message: Message, manager: Manager, user_data: UserData) -> No
     await manager.delete_message(message)
 
 
-@router.message(Command("source"))
+@router.message(Command("rules"))
 async def handler(message: Message, manager: Manager) -> None:
     """
     Handles the /source command.
@@ -71,7 +71,7 @@ async def handler(message: Message, manager: Manager) -> None:
     :param manager: Manager object.
     :return: None
     """
-    text = manager.text_message.get("source")
+    text = manager.text_message.get("rules")
     await manager.send_message(text)
     await manager.delete_message(message)
 
