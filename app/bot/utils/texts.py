@@ -1,5 +1,7 @@
 from abc import abstractmethod, ABCMeta
 
+from aiogram.utils.markdown import hbold
+
 # Add other languages and their corresponding codes as needed.
 # You can also keep only one language by removing the line with the unwanted language.
 SUPPORTED_LANGUAGES = {
@@ -55,7 +57,7 @@ class TextMessage(Text):
         """
         return {
             "en": {
-                "select_language": "👋 <b>Hello</b>, {full_name}!\n\nSelect language:",
+                "select_language": f"👋 <b>Hello</b>, {hbold('{full_name}')}!\n\nSelect language:",
                 "change_language": "<b>Select language:</b>",
                 "main_menu": "<b>Write your question</b>, and we will answer you as soon as possible:",
                 "message_sent": "<b>Message sent!</b> Expect a response.",
@@ -68,7 +70,7 @@ class TextMessage(Text):
                     "<a href=\"https://github.com/nessshon/support-bot\">GitHub</a>"
                 ),
                 "user_started_bot": (
-                    "<b>User {name} started the bot!</b>\n\n"
+                    f"User {hbold('{name}')} started the bot!\n\n"
                     "List of available commands:\n\n"
                     "• /ban\n"
                     "Block/Unblock user"
@@ -80,8 +82,8 @@ class TextMessage(Text):
                     "User information"
                     "<blockquote>Receive a message with basic information about the user.</blockquote>"
                 ),
-                "user_restarted_bot": "<b>User {name} restarted the bot!</b>",
-                "user_stopped_bot": "<b>User {name} stopped the bot!</b>",
+                "user_restarted_bot": f"User {hbold('{name}')} restarted the bot!",
+                "user_stopped_bot": f"User {hbold('{name}')} stopped the bot!",
                 "user_blocked": "<b>User blocked!</b> Messages from the user are not accepted.",
                 "user_unblocked": "<b>User unblocked!</b> Messages from the user are being accepted again.",
                 "blocked_by_user": "<b>Message not sent!</b> The bot has been blocked by the user.",
@@ -109,7 +111,7 @@ class TextMessage(Text):
                 ),
             },
             "ru": {
-                "select_language": "👋 <b>Привет</b>, {full_name}!\n\nВыберите язык:",
+                "select_language": f"👋 <b>Привет</b>, {hbold('{full_name}')}!\n\nВыберите язык:",
                 "change_language": "<b>Выберите язык:</b>",
                 "main_menu": "<b>Оставьте свой вопрос</b>, и мы ответим вам в ближайшее время:",
                 "message_sent": "<b>Сообщение отправлено!</b> Ожидайте ответа.",
@@ -122,7 +124,7 @@ class TextMessage(Text):
                     "<a href=\"https://github.com/nessshon/support-bot\">GitHub</a>"
                 ),
                 "user_started_bot": (
-                    "<b>Пользователь {name} запустил(а) бота!</b>\n\n"
+                    f"Пользователь {hbold('{name}')} запустил(а) бота!\n\n"
                     "Список доступных команд:\n\n"
                     "• /ban\n"
                     "Заблокировать/Разблокировать пользователя"
@@ -134,8 +136,8 @@ class TextMessage(Text):
                     "Информация о пользователе"
                     "<blockquote>Получить сообщение с основной информацией о пользователе.</blockquote>"
                 ),
-                "user_restarted_bot": "<b>Пользователь {name} перезапустил(а) бота!</b>",
-                "user_stopped_bot": "<b>Пользователь {name} остановил(а) бота!</b>",
+                "user_restarted_bot": f"Пользователь {hbold('{name}')} перезапустил(а) бота!",
+                "user_stopped_bot": f"Пользователь {hbold('{name}')} остановил(а) бота!",
                 "user_blocked": "<b>Пользователь заблокирован!</b> Сообщения от пользователя не принимаются.",
                 "user_unblocked": "<b>Пользователь разблокирован!</b> Сообщения от пользователя вновь принимаются.",
                 "blocked_by_user": "<b>Сообщение не отправлено!</b> Бот был заблокирован пользователем.",
