@@ -1,66 +1,70 @@
-from contextlib import suppress
-from typing import Any, Awaitable, Callable, Dict, MutableMapping, Optional
+import math
+import time
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from aiogram import BaseMiddleware
 from aiogram.dispatcher.flags import get_flag
-from aiogram.types import TelegramObject, User
+from aiogram.types import CallbackQuery, Chat, Message, TelegramObject, User
 from cachetools import TTLCache
 
+from app.bot.manager import Manager, delete_later, safe_delete
 
+LIMIT = 5
+PERIOD = 10
+
+
+# Private chat only, an album counts as one; `@flags.rate_limit(seconds)`: one call per `seconds`
 class ThrottlingMiddleware(BaseMiddleware):
-    """
-    Middleware for handling throttling.
-    """
-
-    def __init__(
-            self,
-            *,
-            default_key: Optional[str] = "default",
-            default_ttl: float = 1,
-            **ttl_map: float,
-    ) -> None:
-        """
-        Initialize the ThrottlingMiddleware.
-
-        :param default_key: The default key for throttling.
-        :param default_ttl: The default time-to-live (TTL) in seconds for the default key.
-        :param ttl_map: Mapping of keys to corresponding TTL values.
-        """
-        if default_key:
-            ttl_map[default_key] = default_ttl
-        self.default_key = default_key
-        self.caches: Dict[str, MutableMapping[int, None]] = {}
-        for name, ttl in ttl_map.items():
-            self.caches[name] = TTLCache(maxsize=10_000, ttl=ttl)
+    def __init__(self) -> None:
+        self.messages: TTLCache[int, list[float]] = TTLCache(maxsize=10_000, ttl=PERIOD)
+        self.warned: TTLCache[int, None] = TTLCache(maxsize=10_000, ttl=PERIOD)
+        self.flagged: dict[float, TTLCache[tuple[int, int], None]] = {}
 
     async def __call__(
-            self,
-            handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
-            event: TelegramObject,
-            data: Dict[str, Any],
-    ) -> Optional[Any]:
-        """
-        Call the middleware.
+        self,
+        handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],
+        event: TelegramObject,
+        data: dict[str, Any],
+    ) -> Any | None:
+        chat: Chat | None = data.get("event_chat")
+        user: User | None = data.get("event_from_user")
+        if chat is None or chat.type != "private" or user is None:
+            return await handler(event, data)
 
-        :param handler: The handler function.
-        :param event: The Telegram event.
-        :param data: Additional data.
-        :return: The result of the handler function.
-        """
-        user: Optional[User] = data.get("event_from_user", None)
-
-        if user is not None:
-            # Get the throttling key from data or use the default key
-            throttling_key = get_flag(data, "throttling_key", default=self.default_key)
-            # Check if the user is already throttled for the given key
-            if throttling_key and user.id in self.caches[throttling_key]:
-                # Delete the message if it exists
-                with suppress(Exception):
-                    await event.message.delete()
+        rate_limit = get_flag(data, "rate_limit")
+        if rate_limit is not None:
+            cache = self.flagged.setdefault(rate_limit, TTLCache(maxsize=10_000, ttl=rate_limit))
+            key = (user.id, id(data["handler"].callback))
+            if key in cache:
+                await self.drop(event)
                 return None
+            cache[key] = None
+            return await handler(event, data)
 
-            # Add the user to the cache to indicate throttling
-            self.caches[throttling_key][user.id] = None
+        if isinstance(event, Message):
+            now = time.monotonic()
+            times = [t for t in self.messages.get(user.id, []) if now - t < PERIOD]
+            if len(times) >= LIMIT:
+                seconds = math.ceil(times[0] + PERIOD - now)
+                await self.warn(event, data["manager"], user.id, seconds)
+                return None
+            self.messages[user.id] = [*times, now]
 
-        # Call the handler function with the event and data
         return await handler(event, data)
+
+    @staticmethod
+    async def drop(event: TelegramObject) -> None:
+        if isinstance(event, CallbackQuery):
+            await event.answer()
+        elif isinstance(event, Message):
+            await safe_delete(event)
+
+    async def warn(self, message: Message, manager: Manager, user_id: int, seconds: int) -> None:
+        # Once per period, so that a flood of messages does not turn into a flood of replies
+        if user_id in self.warned:
+            return
+        self.warned[user_id] = None
+
+        text = manager.text_message.get("too_many_messages").format(seconds=seconds)
+        delete_later(await message.reply(text))

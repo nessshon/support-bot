@@ -1,37 +1,29 @@
 from aiogram import Dispatcher
-from aiogram_newsletter.middleware import AiogramNewsletterMiddleware
 
-from .album import AlbumMiddleware
-from .manager import ManagerMiddleware
-from .redis import RedisMiddleware
+from .album import MediaGroupAggregatorMiddleware
+from .chat_order import ChatOrder
 from .throttling import ThrottlingMiddleware
+from .user import UserMiddleware
 
 
-def register_middlewares(dp: Dispatcher, **kwargs) -> None:
-    """
-    Register bot middlewares.
+def register_middlewares(dp: Dispatcher) -> None:
+    chat_order_middleware = dp["chat_order"] = ChatOrder()
+    # First: nothing awaits before it, so updates are noted in the order Telegram sent them
+    dp.update.outer_middleware.register(chat_order_middleware.note)
 
-    Args:
-        dp (Dispatcher): The Aiogram Dispatcher instance.
-        **kwargs: Additional keyword arguments.
+    # Before the handlers' data, so that handlers get the whole album as `album: list[Message]`
+    dp.update.outer_middleware.register(MediaGroupAggregatorMiddleware())
 
-    Returns:
-        None
-    """
-    # Register RedisMiddleware with the provided Redis instance
-    dp.update.outer_middleware.register(RedisMiddleware(kwargs["redis"]))
-    # Register ManagerMiddleware
-    dp.update.outer_middleware.register(ManagerMiddleware())
+    dp.update.outer_middleware.register(UserMiddleware())
 
-    # Register AlbumMiddleware for message processing
-    dp.message.middleware.register(AlbumMiddleware())
-    # Register ThrottlingMiddleware for message processing
-    dp.message.middleware.register(ThrottlingMiddleware())
+    # One instance: commands and buttons share the limits
+    throttling_middleware = ThrottlingMiddleware()
+    dp.message.middleware.register(throttling_middleware)
+    dp.callback_query.middleware.register(throttling_middleware)
 
-    # Register AiogramNewsletterMiddleware for newsletter processing
-    dp.update.middleware.register(AiogramNewsletterMiddleware(kwargs["apscheduler"]))
+    # After the throttling: a dropped message does not wait for its turn
+    dp.message.middleware.register(chat_order_middleware.wait)
+    dp.edited_message.middleware.register(chat_order_middleware.wait)
 
 
-__all__ = [
-    "register_middlewares",
-]
+__all__ = ["register_middlewares"]
