@@ -2,68 +2,40 @@ from dataclasses import dataclass
 
 from environs import Env
 
+from app.texts import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES
+
 
 @dataclass
 class BotConfig:
-    """
-    Data class representing the configuration for the bot.
-
-    Attributes:
-    - TOKEN (str): The bot token.
-    - DEV_ID (int): The developer's user ID.
-    - GROUP_ID (int): The group chat ID.
-    - BOT_EMOJI_ID (str): The custom emoji ID for the group's topic.
-    """
     TOKEN: str
     DEV_ID: int
     GROUP_ID: int
     BOT_EMOJI_ID: str
+    GROUP_LANGUAGE: str
 
 
 @dataclass
 class RedisConfig:
-    """
-    Data class representing the configuration for Redis.
-
-    Attributes:
-    - HOST (str): The Redis host.
-    - PORT (int): The Redis port.
-    - DB (int): The Redis database number.
-    """
     HOST: str
     PORT: int
     DB: int
-
-    def dsn(self) -> str:
-        """
-        Generates a Redis connection DSN (Data Source Name) using the provided host, port, and database.
-
-        :return: The generated DSN.
-        """
-        return f"redis://{self.HOST}:{self.PORT}/{self.DB}"
+    USERNAME: str | None = None
+    PASSWORD: str | None = None
 
 
 @dataclass
 class Config:
-    """
-    Data class representing the overall configuration for the application.
-
-    Attributes:
-    - bot (BotConfig): The bot configuration.
-    - redis (RedisConfig): The Redis configuration.
-    """
     bot: BotConfig
     redis: RedisConfig
 
 
 def load_config() -> Config:
-    """
-    Load the configuration from environment variables and return a Config object.
-
-    :return: The Config object with loaded configuration.
-    """
     env = Env()
     env.read_env()
+
+    group_language = env.str("BOT_GROUP_LANGUAGE", None)
+    if group_language and group_language not in SUPPORTED_LANGUAGES:
+        raise ValueError(f"BOT_GROUP_LANGUAGE must be one of {', '.join(SUPPORTED_LANGUAGES)}, got {group_language!r}")
 
     return Config(
         bot=BotConfig(
@@ -71,10 +43,14 @@ def load_config() -> Config:
             DEV_ID=env.int("BOT_DEV_ID"),
             GROUP_ID=env.int("BOT_GROUP_ID"),
             BOT_EMOJI_ID=env.str("BOT_EMOJI_ID"),
+            GROUP_LANGUAGE=group_language or DEFAULT_LANGUAGE,
         ),
         redis=RedisConfig(
             HOST=env.str("REDIS_HOST"),
             PORT=env.int("REDIS_PORT"),
             DB=env.int("REDIS_DB"),
+            # An empty value in .env means no authentication
+            USERNAME=env.str("REDIS_USERNAME", None) or None,
+            PASSWORD=env.str("REDIS_PASSWORD", None) or None,
         ),
     )

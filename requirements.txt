@@ -1,6 +1,8 @@
-aiogram==3.7.0
-aiogram-newsletter>=0.0.10
-cachetools==5.3.2
-environs==14.1.1
-pydantic==2.5.3
-redis==5.0.1
+aiogram==3.31.0
+cachetools==7.2.1
+captcha==0.7.1
+environs==15.2.0
+marshmallow==4.3.1
+Pillow==12.3.0
+pydantic==2.13.5
+redis==7.4.1

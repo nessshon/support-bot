@@ -1,0 +1,87 @@
+[project]
+name = "support-bot"
+version = "2.0.0"
+description = "Telegram feedback bot: private messages to forum topics, admin replies back to users."
+requires-python = ">=3.12,<3.15"
+authors = [
+    { name = "nessshon" },
+]
+readme = "README.md"
+license = "MIT"
+
+[dependency-groups]
+dev = [
+    "mypy==2.4.0",
+    "ruff==0.17.1",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+# Vendored as is, see the header of the file.
+extend-exclude = ["app/bot/middlewares/album.py"]
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    "W",
+    # pyflakes
+    "F",
+    # isort
+    "I",
+    # flake8-bugbear
+    "B",
+    # flake8-comprehensions
+    "C4",
+    # pyupgrade
+    "UP",
+    # flake8-simplify
+    "SIM",
+    # flake8-return
+    "RET",
+    # flake8-pie
+    "PIE",
+    # pylint errors
+    "PLE",
+    # ruff-specific
+    "RUF",
+    # flake8-print
+    "T20",
+    # flake8-bandit
+    "S",
+]
+ignore = [
+    # assert
+    "S101",
+    # Cyrillic letters in Russian texts look like Latin ones
+    "RUF001",
+    "RUF002",
+    "RUF003",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+# Every handler in a module is named `handler`, the router decorator registers it
+"app/bot/handlers/**" = ["F811"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+plugins = ["pydantic.mypy"]
+python_version = "3.12"
+check_untyped_defs = true
+pretty = true
+show_error_codes = true
+warn_unused_ignores = true
+# Every handler in a module is named `handler`, the router decorator registers it
+disable_error_code = ["no-redef"]
+
+[[tool.mypy.overrides]]
+# redis-py types its commands as `Awaitable[T] | T` for both sync and async clients
+module = ["app.__main__", "app.storage.users"]
+disable_error_code = ["misc"]
