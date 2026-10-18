@@ -1,108 +1,74 @@
-import asyncio
+import logging
 
-from aiogram import Router, F
-from aiogram.exceptions import TelegramBadRequest
-from aiogram.filters import StateFilter
+from aiogram import Bot, F, Router
+from aiogram.exceptions import TelegramAPIError, TelegramRetryAfter
+from aiogram.filters import MagicData
 from aiogram.types import Message
 
-from app.bot.manager import Manager
-from app.bot.types.album import Album
-from app.bot.utils.create_forum_topic import (
-    create_forum_topic,
-    get_or_create_forum_topic,
-)
-from app.bot.utils.redis import RedisStorage
-from app.bot.utils.redis.models import UserData
+from app.bot.chats import relay
+from app.bot.chats.delivery import deliver, queue_entry, queued_message_ids
+from app.bot.exceptions import TopicException
+from app.bot.manager import Manager, delete_later
+from app.config import Config
+from app.storage import UserData, UserStorage
 
+logger = logging.getLogger(__name__)
+# Messages before the captcha are handled by the captcha router
 router = Router()
-router.message.filter(F.chat.type == "private", StateFilter(None))
+router.message.filter(MagicData(~F.user_data.is_banned))
+router.edited_message.filter(MagicData(~F.user_data.is_banned), MagicData(F.user_data.is_verified))
 
 
+# The copy in the topic follows the edit; without a pair (older than the link, deleted by admins) the user is told
 @router.edited_message()
-async def handle_edited_message(message: Message, manager: Manager) -> None:
-    """
-    Handle edited messages.
-
-    :param message: The edited message.
-    :param manager: Manager object.
-    :return: None
-    """
-    # Get the text for the edited message
-    text = manager.text_message.get("message_edited")
-    # Reply to the edited message with the specified text
-    msg = await message.reply(text)
-    # Wait for 5 seconds before deleting the reply
-    await asyncio.sleep(5)
-    # Delete the reply to the edited message
-    await msg.delete()
-
-
-@router.message(F.media_group_id)
-@router.message(F.media_group_id.is_(None))
-async def handle_incoming_message(
-        message: Message,
-        manager: Manager,
-        redis: RedisStorage,
-        user_data: UserData,
-        album: Album | None = None,
+async def handle_edited_message(
+    message: Message,
+    bot: Bot,
+    users: UserStorage,
+    user_data: UserData,
+    manager: Manager,
+    album: list[Message] | None = None,
 ) -> None:
-    """
-    Handles incoming messages and copies them to the forum topic.
-    If the user is banned, the messages are ignored.
+    messages = album or [message]
+    not_edited = [m.message_id for m in messages if not await relay.edit(bot, users, m)]
+    # A queued message is sent later as it is then, the edit included
+    if set(not_edited) - await queued_message_ids(users, user_data.id):
+        delete_later(await message.reply(manager.text_message.get("message_edited")))
 
-    :param message: The incoming message.
-    :param manager: Manager object.
-    :param redis: RedisStorage object.
-    :param user_data: UserData object.
-    :param album: Album object or None.
-    :return: None
-    """
-    # Check if the user is banned
-    if user_data.is_banned:
-        return
 
-    async def copy_message_to_topic():
-        """
-        Copies the message or album to the forum topic.
-        If no album is provided, the message is copied. Otherwise, the album is copied.
-        """
-        message_thread_id = await get_or_create_forum_topic(
-            message.bot,
-            redis,
-            manager.config,
-            user_data,
-        )
+@router.message()
+async def handle_incoming_message(
+    message: Message,
+    bot: Bot,
+    config: Config,
+    users: UserStorage,
+    user_data: UserData,
+    manager: Manager,
+    album: list[Message] | None = None,
+) -> None:
+    await send_to_topic(message, album or [message], bot, config, users, user_data, manager)
 
-        if not album:
-            await message.forward(
-                chat_id=manager.config.bot.GROUP_ID,
-                message_thread_id=message_thread_id,
-            )
-        else:
-            await album.copy_to(
-                chat_id=manager.config.bot.GROUP_ID,
-                message_thread_id=message_thread_id,
-            )
 
+# What can't be delivered now waits in the queue for the background retry or the user's next message
+async def send_to_topic(
+    message: Message,
+    messages: list[Message],
+    bot: Bot,
+    config: Config,
+    users: UserStorage,
+    user_data: UserData,
+    manager: Manager,
+) -> None:
     try:
-        await copy_message_to_topic()
-    except TelegramBadRequest as ex:
-        if "message thread not found" in ex.message:
-            user_data.message_thread_id = await create_forum_topic(
-                message.bot,
-                manager.config,
-                user_data.full_name,
+        await deliver(bot, users, config, user_data, messages)
+    except (TopicException, TelegramAPIError) as ex:
+        await users.queue_add(user_data.id, [queue_entry(m) for m in messages])
+        await message.reply(manager.text_message.get("message_queued"))
+        # Telegram allows ~20 messages per minute in a group: busy, not broken, the developer is not told
+        if isinstance(ex, TelegramRetryAfter):
+            logger.warning(
+                "User %s: %s message(s) queued, retry after %s s", user_data.id, len(messages), ex.retry_after
             )
-            await redis.update_user(user_data.id, user_data)
-            await copy_message_to_topic()
-        else:
-            raise
-
-    # Send a confirmation message to the user
-    text = manager.text_message.get("message_sent")
-    # Reply to the edited message with the specified text
-    msg = await message.reply(text)
-    # Wait for 5 seconds before deleting the reply
-    await asyncio.sleep(5)
-    # Delete the reply to the edited message
-    await msg.delete()
+            return
+        logger.warning("User %s: %s message(s) queued: %s", user_data.id, len(messages), type(ex).__name__)
+        raise
