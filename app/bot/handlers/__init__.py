@@ -1,28 +1,10 @@
 from aiogram import Dispatcher
-from aiogram_newsletter.handlers import AiogramNewsletterHandlers
 
-from . import errors
-from . import group
-from . import private
+from . import errors, group, private, reaction
 
 
 def include_routers(dp: Dispatcher) -> None:
-    """
-    Include bot routers.
-
-    :param dp: Dispatcher object.
-    :return: None
-    """
-    dp.include_routers(
-        *[
-            *group.routers,
-            *private.routers,
-            errors.router,
-        ]
-    )
-    AiogramNewsletterHandlers().register(dp)
+    dp.include_routers(group.id_router, group.router, private.router, reaction.router, errors.router)
 
 
-__all__ = [
-    "include_routers",
-]
+__all__ = ["include_routers"]

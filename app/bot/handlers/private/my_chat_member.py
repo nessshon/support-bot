@@ -1,45 +1,29 @@
-from aiogram import Router, F
+import logging
+from contextlib import suppress
+
+from aiogram import Bot, Router
 from aiogram.enums import ChatMemberStatus
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import ChatMemberUpdated
-from aiogram.utils.markdown import hlink
 
-from app.bot.manager import Manager
-from app.bot.utils.redis import RedisStorage
-from app.bot.utils.redis.models import UserData
+from app.bot.chats.topic import notify
+from app.config import Config
+from app.storage import UserData, UserStorage
 
+logger = logging.getLogger(__name__)
 router = Router()
-router.my_chat_member.filter(F.chat.type == "private")
 
 
 @router.my_chat_member()
-async def handle_chat_member_update(
-        update: ChatMemberUpdated,
-        redis: RedisStorage,
-        user_data: UserData,
-        manager: Manager,
-) -> None:
-    """
-    Handle updates of the bot chat member status.
+async def handler(update: ChatMemberUpdated, bot: Bot, config: Config, users: UserStorage, user_data: UserData) -> None:
+    state = update.new_chat_member.status
+    member = state == ChatMemberStatus.MEMBER
+    logger.info("User %s: %s the bot", user_data.id, "unblocked" if member else "blocked")
+    user_data = await users.patch_user(user_data.id, state=state) or user_data
 
-    :param update: ChatMemberUpdated object.
-    :param redis: RedisStorage object.
-    :param user_data: UserData object.
-    :param manager: Manager object.
-    :return: None
-    """
-    # Update the user's state based on the new chat member status
-    user_data.state = update.new_chat_member.status
-    await redis.update_user(user_data.id, user_data)
-
-    if user_data.state == ChatMemberStatus.MEMBER:
-        text = manager.text_message.get("user_restarted_bot")
-    else:
-        text = manager.text_message.get("user_stopped_bot")
-
-    url = f"https://t.me/{user_data.username[1:]}" if user_data.username != "-" else f"tg://user?id={user_data.id}"
-
-    await update.bot.send_message(
-        chat_id=manager.config.bot.GROUP_ID,
-        text=text.format(name=hlink(user_data.full_name, url)),
-        message_thread_id=user_data.message_thread_id,
-    )
+    # Without a topic in the current group there is nowhere to report, and the General topic is not the place for it
+    if not user_data.has_topic(config.bot.GROUP_ID):
+        return
+    # Admins may have deleted the topic
+    with suppress(TelegramBadRequest):
+        await notify(bot, config, user_data, "user_restarted_bot" if member else "user_stopped_bot")
