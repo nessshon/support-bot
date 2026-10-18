@@ -1,0 +1,162 @@
+language = "🇬🇧 English"
+
+captcha = """
+🔐 <b>Verification</b>
+
+Send the characters from the picture. The code is valid for 2 minutes."""
+
+captcha_first = """
+🔐 <b>Verification first</b>
+
+Send the characters from the picture, then your message. The code is valid for 2 minutes."""
+
+captcha_wrong = """
+🔄 <b>Wrong code</b>
+
+Send the characters from the new picture."""
+
+captcha_expired = """
+⌛ <b>Code expired</b>
+
+Send the characters from the new picture."""
+
+select_language = """
+👋 <b>Hello,</b> {full_name}
+
+Select the language:"""
+
+change_language = """
+🌐 <b>Language</b>
+
+Select the language:"""
+
+main_menu = """
+💬 <b>Support</b>
+
+Write your question, and we will answer as soon as we can."""
+
+message_queued = """
+📨 <b>Message accepted</b>
+
+We will deliver it as soon as we can."""
+
+too_many_messages = """
+⏳ <b>Too many messages</b>
+
+Wait {seconds} s and send the message again."""
+
+message_edited = """
+✏️ <b>The edit did not reach support</b>
+
+The message is too old. Send the corrected one again."""
+
+message_deleted = """
+✅ <b>Message deleted</b>
+
+Deleted on both sides."""
+
+message_not_deleted = """
+⚠️ <b>Not deleted</b>
+
+A message can be deleted within 48 hours of sending."""
+
+message_delete_failed = """
+⚠️ <b>Not deleted</b>
+
+Telegram did not let the bot delete the message."""
+
+message_not_found = """
+⚠️ <b>Message not found</b>
+
+Reply /delete to your own message."""
+
+admin_message_not_found = """
+⚠️ <b>Message not found</b>
+
+Reply /delete to a support message in this topic."""
+
+user_started_bot = """
+👤 <b>New user</b>
+
+<b>Name:</b> {name}
+<b>ID:</b> <code>{id}</code>
+<b>Username:</b> {username}
+<b>Language:</b> {language}
+<b>Registered:</b> {created_at}
+
+Every message from this topic goes to the user, edits, replies and reactions follow both ways.
+
+/ban — block / unblock<blockquote>The user's messages don't reach the topic.</blockquote>
+/silent — silent mode on / off<blockquote>Messages from the topic don't reach the user.</blockquote>
+/delete — delete a reply for the user<blockquote>As a reply to a support message, up to 48 hours old.</blockquote>
+/information — user details<blockquote>ID, username, language, status, block, silent mode.</blockquote>"""
+
+user_restarted_bot = """
+▶️ <b>Bot started again</b>
+
+<b>User:</b> {name}"""
+
+user_stopped_bot = """
+⏸ <b>Bot stopped</b>
+
+<b>User:</b> {name}
+
+Messages will not arrive until the user starts the bot again."""
+
+user_information = """
+👤 {full_name}
+
+<b>ID:</b> <code>{id}</code>
+<b>Username:</b> {username}
+<b>Language:</b> {language}
+<b>Bot:</b> {state}
+<b>Blocked:</b> {is_banned}
+<b>Silent mode:</b> {silent_mode}
+<b>Registered:</b> {created_at}"""
+
+user_blocked = """
+🔒 <b>User blocked</b>
+
+Their messages no longer reach the topic."""
+
+user_unblocked = """
+🔓 <b>User unblocked</b>
+
+Their messages reach the topic again."""
+
+silent_mode_enabled = """
+🔕 <b>Silent mode on</b>
+
+Messages from the topic don't reach the user."""
+
+silent_mode_disabled = """
+🔔 <b>Silent mode off</b>
+
+Messages reach the user again."""
+
+blocked_by_user = """
+⚠️ <b>Not delivered</b>
+
+The user has blocked the bot."""
+
+message_not_sent = """
+⚠️ <b>Not delivered</b>
+
+Telegram did not accept the message."""
+
+# Values in the user's details
+value_yes = "yes"
+value_no = "no"
+value_on = "on"
+value_off = "off"
+value_none = "—"
+bot_running = "running"
+bot_stopped = "stopped"
+
+command_start = "Restart the bot"
+command_delete = "Delete a message"
+command_language = "Change the language"
+group_command_ban = "Block / unblock the user"
+group_command_silent = "Turn silent mode on / off"
+group_command_delete = "Delete a reply for the user"
+group_command_information = "User details"

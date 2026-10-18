@@ -2,140 +2,63 @@ from aiogram import Bot
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import (
     BotCommand,
-    BotCommandScopeChat,
     BotCommandScopeAllGroupChats,
     BotCommandScopeAllPrivateChats,
+    BotCommandScopeChat,
 )
 
-from app.bot.utils.texts import SUPPORTED_LANGUAGES
 from app.config import Config
+from app.texts import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, TextMessage
+
+
+def menu(language_code: str, prefix: str, names: list[str]) -> list[BotCommand]:
+    text_message = TextMessage(language_code)
+    return [BotCommand(command=name, description=text_message.get(f"{prefix}_{name}")) for name in names]
+
+
+# The default language's menu is shown to everyone without a menu of their own language
+def menu_language(language_code: str) -> str | None:
+    return None if language_code == DEFAULT_LANGUAGE else language_code
 
 
 async def setup(bot: Bot, config: Config) -> None:
-    """
-    Set up bot commands for various scopes and languages.
-
-    :param bot: The Bot object.
-    :param config: The Config object.
-    """
-    # Define bot commands for different languages
-    commands = {
-        "en": [
-            BotCommand(command="start", description="Restart bot"),
-            BotCommand(command="source", description="Source code"),
-        ],
-        "ru": [
-            BotCommand(command="start", description="Перезапустить бота"),
-            BotCommand(command="source", description="Исходники бота"),
-        ]
-    }
-
+    commands = ["start", "delete"]
     if len(SUPPORTED_LANGUAGES) > 1:
-        # If there are more than one supported language, add commands for changing the language
-        commands["en"].append(
-            BotCommand(command="language", description="Change language"),
-        )
-        commands["ru"].append(
-            BotCommand(command="language", description="Изменить язык"),
-        )
-
-    group_commands = {
-        "en": [
-            BotCommand(command="ban", description="Block/Unblock a user"),
-            BotCommand(command="silent", description="Activate/Deactivate silent Mode"),
-            BotCommand(command="information", description="User information"),
-        ],
-        "ru": [
-            BotCommand(command="ban", description="Заблокировать/Разблокировать пользователя"),
-            BotCommand(command="silent", description="Активировать/Деактивировать тихий режим"),
-            BotCommand(command="information", description="Информация о пользователе"),
-        ]
-    }
-
-    admin_commands = {
-        "en":
-            commands["en"].copy() +
-            [BotCommand(command="newsletter", description="Newsletter menu")],
-        "ru":
-            commands["ru"].copy() +
-            [BotCommand(command="newsletter", description="Меню рассылки")],
-    }
+        commands.append("language")
+    group_commands = ["ban", "silent", "delete", "information"]
 
     try:
-        # Set commands for dev or admin in English language
+        for language_code in SUPPORTED_LANGUAGES:
+            await bot.delete_my_commands(
+                scope=BotCommandScopeChat(chat_id=config.bot.DEV_ID),
+                language_code=menu_language(language_code),
+            )
+    except TelegramBadRequest as ex:
+        raise ValueError(f"Chat with DEV_ID {config.bot.DEV_ID} not found.") from ex
+
+    for language_code in SUPPORTED_LANGUAGES:
         await bot.set_my_commands(
-            commands=admin_commands["en"],
-            scope=BotCommandScopeChat(chat_id=config.bot.DEV_ID),
+            commands=menu(language_code, "command", commands),
+            scope=BotCommandScopeAllPrivateChats(),
+            language_code=menu_language(language_code),
         )
-        # Set commands for dev or admin in Russian language
-        await bot.set_my_commands(
-            commands=admin_commands["ru"],
-            scope=BotCommandScopeChat(chat_id=config.bot.DEV_ID),
-            language_code="ru",
-        )
-    except TelegramBadRequest:
-        raise ValueError(f"Chat with DEV_ID {config.bot.DEV_ID} not found.")
-
-    # Set commands for all private chats in English language
     await bot.set_my_commands(
-        commands=commands["en"],
-        scope=BotCommandScopeAllPrivateChats(),
-    )
-    # Set commands for all private chats in Russian language
-    await bot.set_my_commands(
-        commands=commands["ru"],
-        scope=BotCommandScopeAllPrivateChats(),
-        language_code="ru",
-    )
-    # Set commands for all group chats in English language
-    await bot.set_my_commands(
-        commands=group_commands["en"],
+        commands=menu(config.bot.GROUP_LANGUAGE, "group_command", group_commands),
         scope=BotCommandScopeAllGroupChats(),
     )
-    # Set commands for all group chats in Russian language
-    await bot.set_my_commands(
-        commands=group_commands["ru"],
-        scope=BotCommandScopeAllGroupChats(),
-        language_code="ru"
-    )
+    # The group has one language: commands for a language_code would override it for admins with that language
+    for language_code in SUPPORTED_LANGUAGES:
+        if language_code != DEFAULT_LANGUAGE:
+            await bot.delete_my_commands(scope=BotCommandScopeAllGroupChats(), language_code=language_code)
 
 
-async def delete(bot: Bot, config: Config) -> None:
-    """
-    Delete bot commands for various scopes and languages.
-
-    :param config: The Config object.
-    :param bot: The Bot object.
-    """
-
-    try:
-        # Delete commands for dev or admin in any language
+async def delete(bot: Bot) -> None:
+    for language_code in SUPPORTED_LANGUAGES:
         await bot.delete_my_commands(
-            scope=BotCommandScopeChat(chat_id=config.bot.DEV_ID),
+            scope=BotCommandScopeAllPrivateChats(),
+            language_code=menu_language(language_code),
         )
-        # Delete commands for dev or admin in Russian language
         await bot.delete_my_commands(
-            scope=BotCommandScopeChat(chat_id=config.bot.DEV_ID),
-            language_code="ru",
+            scope=BotCommandScopeAllGroupChats(),
+            language_code=menu_language(language_code),
         )
-    except TelegramBadRequest:
-        raise ValueError(f"Chat with DEV_ID {config.bot.DEV_ID} not found.")
-
-    # Delete commands for all private chats in any language
-    await bot.delete_my_commands(
-        scope=BotCommandScopeAllPrivateChats(),
-    )
-    # Delete commands for all private chats in Russian language
-    await bot.delete_my_commands(
-        scope=BotCommandScopeAllPrivateChats(),
-        language_code="ru",
-    )
-    # Delete commands for all group chats in any language
-    await bot.delete_my_commands(
-        scope=BotCommandScopeAllGroupChats(),
-    )
-    # Delete commands for all group chats in Russian language
-    await bot.delete_my_commands(
-        scope=BotCommandScopeAllGroupChats(),
-        language_code="ru",
-    )
