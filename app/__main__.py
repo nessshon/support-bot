@@ -1,115 +1,80 @@
 import asyncio
+import logging
+from contextlib import suppress
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.fsm.storage.redis import RedisStorage
-from apscheduler.jobstores.redis import RedisJobStore
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from redis.asyncio import Redis
 
-from .bot import commands
-from .bot.handlers import include_routers
-from .bot.middlewares import register_middlewares
-from .config import load_config, Config
-from .logger import setup_logger
+from app.bot import commands
+from app.bot.chats import delivery
+from app.bot.chats.topic import check_group
+from app.bot.handlers import include_routers
+from app.bot.middlewares import register_middlewares
+from app.bot.middlewares.chat_order import ChatOrder
+from app.bot.middlewares.retry_after import RetryMiddleware
+from app.config import Config, load_config
+from app.storage import UserStorage
+from app.texts import SUPPORTED_LANGUAGES
 
-
-async def on_shutdown(
-    apscheduler: AsyncIOScheduler,
-    dispatcher: Dispatcher,
-    config: Config,
-    bot: Bot,
-) -> None:
-    """
-    Shutdown event handler. This runs when the bot shuts down.
-
-    :param apscheduler: AsyncIOScheduler: The apscheduler instance.
-    :param dispatcher: Dispatcher: The bot dispatcher.
-    :param config: Config: The config instance.
-    :param bot: Bot: The bot instance.
-    """
-    # Stop apscheduler
-    apscheduler.shutdown()
-    # Delete commands and close storage when shutting down
-    await commands.delete(bot, config)
-    await dispatcher.storage.close()
-    await bot.delete_webhook()
-    await bot.session.close()
+logger = logging.getLogger(__name__)
+# Under docker's 10 s between the stop and the kill
+SHUTDOWN_WAIT = 8
 
 
-async def on_startup(
-    apscheduler: AsyncIOScheduler,
-    config: Config,
-    bot: Bot,
-) -> None:
-    """
-    Startup event handler. This runs when the bot starts up.
-
-    :param apscheduler: AsyncIOScheduler: The apscheduler instance.
-    :param config: Config: The config instance.
-    :param bot: Bot: The bot instance.
-    """
-    # Start apscheduler
-    apscheduler.start()
-    # Setup commands when starting up
+async def on_startup(dispatcher: Dispatcher, bot: Bot, config: Config, users: UserStorage) -> None:
     await commands.setup(bot, config)
+    dispatcher["queue_retry"] = asyncio.create_task(delivery.retry_queues(bot, users, config))
+    logger.info("Group %s, languages %s", config.bot.GROUP_ID, ", ".join(SUPPORTED_LANGUAGES))
+
+
+async def on_shutdown(dispatcher: Dispatcher, bot: Bot, users: UserStorage, chat_order: ChatOrder) -> None:
+    # Handlers still running are cancelled when the bot stops: a message in the middle of its delivery would be lost
+    with suppress(TimeoutError):
+        await asyncio.wait_for(chat_order.idle(), SHUTDOWN_WAIT)
+    retry = dispatcher["queue_retry"]
+    retry.cancel()
+    with suppress(asyncio.CancelledError):
+        await retry
+    await commands.delete(bot)
+    await users.redis.aclose()
 
 
 async def main() -> None:
-    """
-    Main function that initializes the bot and starts the event loop.
-    """
-    # Load config
     config = load_config()
 
-    # Initialize apscheduler
-    job_store = RedisJobStore(
+    # Credentials go as arguments, not in a URL: special characters in a password break URL parsing
+    redis = Redis(
         host=config.redis.HOST,
         port=config.redis.PORT,
         db=config.redis.DB,
+        username=config.redis.USERNAME,
+        password=config.redis.PASSWORD,
     )
-    apscheduler = AsyncIOScheduler(
-        jobstores={"default": job_store},
-    )
+    await redis.ping()
 
-    # Initialize Redis storage
-    storage = RedisStorage.from_url(
-        url=config.redis.dsn(),
-    )
+    bot_default = DefaultBotProperties(parse_mode=ParseMode.HTML, link_preview_is_disabled=True)
+    bot = Bot(token=config.bot.TOKEN, default=bot_default)
+    bot.session.middleware(RetryMiddleware())
+    await check_group(bot, config)
 
-    # Create Bot and Dispatcher instances
-    bot = Bot(
-        token=config.bot.TOKEN,
-        default=DefaultBotProperties(
-            parse_mode=ParseMode.HTML,
-        ),
-    )
-    dp = Dispatcher(
-        apscheduler=apscheduler,
-        storage=storage,
-        config=config,
-        bot=bot,
-    )
+    users = UserStorage(redis)
+    await users.init_first_group_id(config.bot.GROUP_ID)
 
-    # Register startup handler
+    # No FSM: the bot has no states, its window and captcha live in UserStorage
+    dp = Dispatcher(disable_fsm=True, config=config, users=users)
     dp.startup.register(on_startup)
-    # Register shutdown handler
     dp.shutdown.register(on_shutdown)
-
-    # Include routes
     include_routers(dp)
-    # Register middlewares
-    register_middlewares(
-        dp, config=config, redis=storage.redis, apscheduler=apscheduler
-    )
+    register_middlewares(dp)
 
-    # Start the bot
     await bot.delete_webhook()
     await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
 
 
 if __name__ == "__main__":
-    # Set up logging
-    setup_logger()
-    # Run the bot
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    # aiogram logs every handled update at INFO; failed updates are logged at ERROR
+    logging.getLogger("aiogram.event").setLevel(logging.WARNING)
     asyncio.run(main())
