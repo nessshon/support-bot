@@ -52,8 +52,9 @@ A message deleted by hand stays on the other side: Telegram doesn't tell bots. U
 2. Create a group and enable topics in the group settings.
 3. Add the bot to the group as an admin with the rights to manage topics, delete messages and pin messages.
 4. Add [What's my Telegram ID?](https://t.me/my_id_bot) to the group and save the group ID (`BOT_GROUP_ID`).
-5. Optionally, edit the bot texts in [locales](https://github.com/nessshon/support-bot/tree/main/locales).
-6. Optionally, add a language: copy `en.toml` to `de.toml` (the language code) and translate it.
+5. Optionally, edit the bot texts in [locales](https://github.com/nessshon/support-bot/tree/main/locales) and uncomment
+   the `locales` lines in `compose.yaml`: the bot then reads the texts from the folder, not from the image.
+6. Optionally, add a language the same way: copy `en.toml` to `de.toml` (the language code) and translate it.
 
 Every message an admin writes in the user's topic goes to the user. Messages of anonymous admins are ignored, so that
 it is always clear who replied. On start the bot checks the group and stops with a clear error if the group ID is
@@ -86,13 +87,20 @@ You need your own server or you can rent one from a hosting provider. For this, 
    nano .env
    ```
 
-5. Running a bot in a docker container:
+5. Start the bot, the ready image is downloaded from GitHub:
 
    ```bash
-   docker compose up -d --build
+   docker compose up -d
    ```
 
    Check that it started: `docker compose logs -f bot`.
+
+### Updating
+
+```bash
+docker compose pull
+docker compose up -d
+```
 
 ## Environment Variables Reference
 

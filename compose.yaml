@@ -1,13 +1,15 @@
 services:
   bot:
-    build:
-      context: .
+    image: ghcr.io/nessshon/support-bot:2
+    build: .
     container_name: support-bot
     restart: always
+    env_file: .env
     depends_on:
       - redis
-    volumes:
-      - .:/app
+    # Your own texts: uncomment to use the locales folder instead of the texts in the image
+    # volumes:
+    #   - ./locales:/app/locales
     logging:
       driver: json-file
       options:
