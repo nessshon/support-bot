@@ -16,6 +16,8 @@ services:
   redis:
     image: redis:alpine
     container_name: support-redis
+    # A snapshot a minute after a change instead of up to an hour: less to lose if the server goes down
+    command: redis-server --save 60 1
     restart: always
     volumes:
       - ./redis/data/:/data
