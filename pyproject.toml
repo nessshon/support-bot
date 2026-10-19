@@ -1,6 +1,6 @@
 [project]
 name = "support-bot"
-version = "2.0.0"
+version = "2.1.0"
 description = "Telegram feedback bot: private messages to forum topics, admin replies back to users."
 requires-python = ">=3.12,<3.15"
 authors = [
