@@ -9,13 +9,14 @@
 **Support Bot** is a Telegram bot for feedback: every user who writes to the bot gets their own topic in your forum
 group, and admins answer right in the topic.
 
+* Bot example: [@nessshonSupportBot](https://t.me/nessshonSupportBot)
+* Linked group example: [@nessshonSupportGroup](https://t.me/nessshonSupportGroup)
+
+**Features**:
 * **Both ways.** Messages, edits, replies and reactions reach the other side; forwards keep their source.
 * **Delivery.** Undelivered messages are queued and sent later, in order; albums stay albums.
 * **Control.** Block a user, turn on silent mode for a topic, see the user's details. New users pass a captcha.
 * **Languages.** A file per language in [locales](https://github.com/nessshon/support-bot/tree/main/locales); users pick theirs, the group has its own.
-
-* Bot example: [@nessshonSupportBot](https://t.me/nessshonSupportBot)
-* Linked group example: [@nessshonSupportGroup](https://t.me/nessshonSupportGroup)
 
 **About Limits**:
 <blockquote>
